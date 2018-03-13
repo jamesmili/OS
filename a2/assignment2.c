@@ -8,7 +8,6 @@
 #define PAGE_SIZE 256
 #define TLB_SIZE 16
 #define PAGE_TABLE_SIZE 256
-#define PHYSICAL_SIZE 128
 #define OFFSET_BITS 8
 
 char buff[BUFFER_SIZE];
@@ -35,6 +34,7 @@ int main(){
 	int i;
 	int numFaults;
 	int pageTable[PAGE_TABLE_SIZE];
+	int physicalMemory[PAGE_SIZE];
 	int offset;
 	int tlbremove;
 	int frameNum;
@@ -45,6 +45,7 @@ int main(){
 	numHits = 0;
 	totaladdr = 0;
 	frameNum = 0;
+	numFaults = 0;
 
 	//initialize TLB
 	for (i = 0; i < TLB_SIZE; i++){
@@ -54,6 +55,10 @@ int main(){
 	//initialize page table
 	for (i = 0; i < PAGE_TABLE_SIZE; i++){
 		pageTable[i] = -1;
+	}
+	//initialize physical memory
+	for (i=0; i < PAGE_SIZE; i++){
+		physicalMemory[i] = -1;
 	}
 	FILE *fptr = fopen("addresses.txt","r");
 	while (fgets(buff,BUFFER_SIZE,fptr)!=NULL){
@@ -65,10 +70,13 @@ int main(){
 		pageNum = b>>OFFSET_BITS;
 		pageOff = b&255;
 		totaladdr++;
-		printf("page num: %d\n",pageNum);
+		printf("page num: %d offset: %d\n",pageNum, pageOff);
+		//Check TLB
 		hit = search_TLB(pageNum);
 
+		//TLB Miss
 		if (hit == 0){
+			//Check if frame is in page table
 			if (pageTable[pageNum] == -1){
 				if (tlbremove >= TLB_SIZE){
 					tlbremove = 0;
@@ -77,12 +85,12 @@ int main(){
 				TLB_Update(tlbremove,pageNum,frameNum);
 				frameNum++;
 				tlbremove++;
-				physicalAddress = (frameNum<<OFFSET_BITS) | pageOff;
-			}
-			else{
-				physicalAddress = (pageTable[pageNum]<<OFFSET_BITS) | pageOff;
-			}
+				numFaults++;
 
+				//Part 3 Page Fault
+
+			}
+			physicalAddress = pageTable[pageNum]*PAGE_SIZE + pageOff;
 		}
 		printf("address: %s  physical address: %d\n",buff, physicalAddress);
 	}
@@ -101,7 +109,7 @@ int search_TLB(int pageNumber){
 	for (i = 0; i < TLB_SIZE; i++){
 		if (TLB[i].pageN == pageNumber){
 			numHits++;
-			physicalAddress = (TLB[i].frameN<<OFFSET_BITS) | pageOff;
+			physicalAddress = TLB[i].frameN*PAGE_SIZE + pageOff;
 			return 1;
 		}
 	}
