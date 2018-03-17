@@ -14,6 +14,7 @@
 int search_TLB(int pageNumber);
 void TLB_add(int i, int pageNumber, int frameNumber);
 void TLB_Update(int pageNumber, int frameNumber);
+void replace_Frame(int frameNum);
 
 signed char *mmapfptr;
 char buff[BUFFER_SIZE];
@@ -23,6 +24,8 @@ int physicalAddress;
 int pageNum;
 int pageOff;
 int tlbremove;
+int pageTable[PAGE_TABLE_SIZE];
+char physicalMemory[MEM_SIZE];
 
 typedef struct TLBentry{
 	int pageN;
@@ -37,12 +40,10 @@ int main(){
 	int totaladdr;
 	int i;
 	int numFaults;
-	int pageTable[PAGE_TABLE_SIZE];
-	char physicalMemory[MEM_SIZE];
 	int offset;
 	int frameNum;
 	int value;
-	int freeFrame;
+	int flag;
 
 	tlbremove = 0;
 	hit = 0;
@@ -52,7 +53,7 @@ int main(){
 	frameNum = 0;
 	numFaults = 0;
 	value = 0;
-	freeFrame = 0;
+	flag = 0;
 
 	//initialize TLB
 	for (i = 0; i < TLB_SIZE; i++){
@@ -83,11 +84,14 @@ int main(){
 			//page fault
 			if (pageTable[pageNum] == -1){
 				printf("page fault ");
-				//if no frames are available, start at index 0 to achieve FIFO
-				if (frameNum*PAGE_SIZE >= MEM_SIZE){
-					printf("reset frame num\n");
+				if (frameNum >= 128){
 					frameNum = 0;
+					flag = 1;
 				}
+				if (flag == 1){
+					replace_Frame(frameNum);
+				}
+				//if no frames are available, start at index 0 to achieve FIFO
 				memcpy(physicalMemory+frameNum*PAGE_SIZE, mmapfptr+pageNum*PAGE_SIZE, PAGE_SIZE);
 				value = physicalMemory[frameNum+pageOff];
 				pageTable[pageNum] = frameNum;
@@ -101,6 +105,8 @@ int main(){
 				TLB_Update(pageNum, pageTable[pageNum]);
 				physicalAddress = pageTable[pageNum]*PAGE_SIZE + pageOff;
 			}
+		}else{
+			physicalAddress = pageTable[pageNum]*PAGE_SIZE+pageOff;
 		}
 		printf("%d PN: %d, Offset: %d, FN: %d, PA: %d VAL: %d\n", totaladdr,pageNum, pageOff, pageTable[pageNum],physicalAddress, physicalMemory[pageNum+offset]);
 		fprintf(out, "Virtual Address: %d ", logicalAddress);
@@ -140,4 +146,12 @@ void TLB_Update(int pageNumber, int frameNumber){
 	TLB_add(tlbremove, pageNumber, frameNumber);
 	tlbremove++;
 
+}
+void replace_Frame(int fN){
+	int i;
+	for (i = 0; i < PAGE_TABLE_SIZE; i++){
+		if (pageTable[i] == fN){
+			pageTable[i] = -1;
+		}
+	}
 }
