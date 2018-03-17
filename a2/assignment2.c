@@ -73,32 +73,36 @@ int main(){
 		pageNum = logicalAddress>>OFFSET_BITS;
 		pageOff = logicalAddress&255;
 		totaladdr++;
-
 		//Check TLB
 		hit = search_TLB(pageNum);
+		printf("frameNum: %d, frameNum*PAGE_SIZE: %d\n", frameNum, frameNum*PAGE_SIZE);
 
 		//TLB Miss
 		if (hit == 0){
 			//Check if frame is in page table
 			//page fault
 			if (pageTable[pageNum] == -1){
+				printf("page fault ");
 				//if no frames are available, start at index 0 to achieve FIFO
 				if (frameNum*PAGE_SIZE >= MEM_SIZE){
+					printf("reset frame num\n");
 					frameNum = 0;
 				}
 				memcpy(physicalMemory+frameNum*PAGE_SIZE, mmapfptr+pageNum*PAGE_SIZE, PAGE_SIZE);
 				value = physicalMemory[frameNum+pageOff];
 				pageTable[pageNum] = frameNum;
 				TLB_Update(pageNum,frameNum);
+				physicalAddress = frameNum*PAGE_SIZE + pageOff;
 				frameNum++;
 				numFaults++;
 			}else{
 				//get frame number from pagetable
-				frameNum = pageTable[pageNum];
-				TLB_Update(pageNum, frameNum);
+				printf("page miss ");
+				TLB_Update(pageNum, pageTable[pageNum]);
+				physicalAddress = pageTable[pageNum]*PAGE_SIZE + pageOff;
 			}
-			physicalAddress = pageTable[pageNum]*PAGE_SIZE + pageOff;
 		}
+		printf("%d PN: %d, Offset: %d, FN: %d, PA: %d VAL: %d\n", totaladdr,pageNum, pageOff, pageTable[pageNum],physicalAddress, physicalMemory[pageNum+offset]);
 		fprintf(out, "Virtual Address: %d ", logicalAddress);
 		fprintf(out, "Physical Address = %d ", physicalAddress);
 		fprintf(out, "Value= %d\n", physicalMemory[pageNum+pageOff]);
@@ -121,6 +125,7 @@ int search_TLB(int pageNumber){
 	for (i = 0; i < TLB_SIZE; i++){
 		if (TLB[i].pageN == pageNumber){
 			numHits++;
+			printf("page hit ");
 			physicalAddress = TLB[i].frameN*PAGE_SIZE + pageOff;
 			return 1;
 		}
