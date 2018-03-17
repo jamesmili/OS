@@ -76,14 +76,12 @@ int main(){
 		totaladdr++;
 		//Check TLB
 		hit = search_TLB(pageNum);
-		printf("frameNum: %d, frameNum*PAGE_SIZE: %d\n", frameNum, frameNum*PAGE_SIZE);
 
 		//TLB Miss
 		if (hit == 0){
 			//Check if frame is in page table
 			//page fault
 			if (pageTable[pageNum] == -1){
-				printf("page fault ");
 				if (frameNum >= 128){
 					frameNum = 0;
 					flag = 1;
@@ -93,25 +91,23 @@ int main(){
 				}
 				//if no frames are available, start at index 0 to achieve FIFO
 				memcpy(physicalMemory+frameNum*PAGE_SIZE, mmapfptr+pageNum*PAGE_SIZE, PAGE_SIZE);
-				value = physicalMemory[frameNum+pageOff];
 				pageTable[pageNum] = frameNum;
 				TLB_Update(pageNum,frameNum);
 				physicalAddress = frameNum*PAGE_SIZE + pageOff;
 				frameNum++;
 				numFaults++;
+				value = physicalMemory[physicalAddress];
 			}else{
 				//get frame number from pagetable
-				printf("page miss ");
 				TLB_Update(pageNum, pageTable[pageNum]);
 				physicalAddress = pageTable[pageNum]*PAGE_SIZE + pageOff;
 			}
 		}else{
 			physicalAddress = pageTable[pageNum]*PAGE_SIZE+pageOff;
 		}
-		printf("%d PN: %d, Offset: %d, FN: %d, PA: %d VAL: %d\n", totaladdr,pageNum, pageOff, pageTable[pageNum],physicalAddress, physicalMemory[pageNum+offset]);
 		fprintf(out, "Virtual Address: %d ", logicalAddress);
 		fprintf(out, "Physical Address = %d ", physicalAddress);
-		fprintf(out, "Value= %d\n", physicalMemory[pageNum+pageOff]);
+		fprintf(out, "Value= %d\n", physicalMemory[physicalAddress]);
 	}
 	fprintf(out, "Total Addresses = %d \n", totaladdr);
 	fprintf(out, "Page_faults = %d\n", numFaults);
@@ -119,7 +115,7 @@ int main(){
 	close (mmapfile_fd);
 	fclose(out);
 	fclose(fptr);
-	munmap(mmapfptr, MEM_SIZE);
+	munmap(mmapfptr, PAGE_SIZE*PAGE_SIZE);
 	return 0;
 }
 void TLB_add(int i, int pageNumber, int frameNumber){
@@ -131,7 +127,6 @@ int search_TLB(int pageNumber){
 	for (i = 0; i < TLB_SIZE; i++){
 		if (TLB[i].pageN == pageNumber){
 			numHits++;
-			printf("page hit ");
 			physicalAddress = TLB[i].frameN*PAGE_SIZE + pageOff;
 			return 1;
 		}
@@ -152,6 +147,7 @@ void replace_Frame(int fN){
 	for (i = 0; i < PAGE_TABLE_SIZE; i++){
 		if (pageTable[i] == fN){
 			pageTable[i] = -1;
+			break;
 		}
 	}
 }
