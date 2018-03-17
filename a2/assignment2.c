@@ -11,16 +11,18 @@
 #define OFFSET_BITS 8
 #define MEM_SIZE 128*PAGE_SIZE
 
-signed char *mmapfptr;
-char buff[BUFFER_SIZE];
 int search_TLB(int pageNumber);
 void TLB_add(int i, int pageNumber, int frameNumber);
-void TLB_Update(int index, int pageNumber, int frameNumber);
+void TLB_Update(int pageNumber, int frameNumber);
+
+signed char *mmapfptr;
+char buff[BUFFER_SIZE];
 int hit;
 int numHits;
 int physicalAddress;
 int pageNum;
 int pageOff;
+int tlbremove;
 
 typedef struct TLBentry{
 	int pageN;
@@ -38,7 +40,6 @@ int main(){
 	int pageTable[PAGE_TABLE_SIZE];
 	char physicalMemory[MEM_SIZE];
 	int offset;
-	int tlbremove;
 	int frameNum;
 	int value;
 	int freeFrame;
@@ -78,28 +79,24 @@ int main(){
 
 		//TLB Miss
 		if (hit == 0){
-			//Help with circular array for TLB_Update
-			if (tlbremove >= TLB_SIZE){
-				tlbremove = 0;
-			}
 			//Check if frame is in page table
 			//page fault
 			if (pageTable[pageNum] == -1){
+				//if no frames are available, start at index 0 to achieve FIFO
 				if (frameNum*PAGE_SIZE >= MEM_SIZE){
 					frameNum = 0;
 				}
-				memcpy(physicalMemory+frameNum*128, mmapfptr+pageNum*PAGE_SIZE, PAGE_SIZE);
+				memcpy(physicalMemory+frameNum*PAGE_SIZE, mmapfptr+pageNum*PAGE_SIZE, PAGE_SIZE);
 				value = physicalMemory[frameNum+pageOff];
 				pageTable[pageNum] = frameNum;
-				TLB_Update(tlbremove,pageNum,frameNum);
+				TLB_Update(pageNum,frameNum);
 				frameNum++;
 				numFaults++;
 			}else{
 				//get frame number from pagetable
 				frameNum = pageTable[pageNum];
-				TLB_Update(tlbremove, pageNum, frameNum);
+				TLB_Update(pageNum, frameNum);
 			}
-			tlbremove++;
 			physicalAddress = pageTable[pageNum]*PAGE_SIZE + pageOff;
 		}
 		fprintf(out, "Virtual Address: %d ", logicalAddress);
@@ -130,6 +127,12 @@ int search_TLB(int pageNumber){
 	}
 	return 0;
 }
-void TLB_Update(int i, int pageNumber, int frameNumber){
-	TLB_add(i, pageNumber, frameNumber);
+void TLB_Update(int pageNumber, int frameNumber){
+	// help with the circular array
+	if (tlbremove >= TLB_SIZE){
+		tlbremove = 0;
+	}
+	TLB_add(tlbremove, pageNumber, frameNumber);
+	tlbremove++;
+
 }
