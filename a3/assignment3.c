@@ -37,6 +37,7 @@ int main(int argc, char *argv[]){
   int CSCAN_HM = 0;
   int LOOK_HM = 0;
   int CLOOK_HM = 0;
+  char filename[100];
 
   header = atoi(argv[1]);
   strcpy(direction,argv[2]);
@@ -53,54 +54,68 @@ int main(int argc, char *argv[]){
   for (i = 0; i < R_SIZE; i++){
     sortedrequests[i] = requests[i];
   }
+  if (strcmp(direction,"LEFT") == 0){
+    strcpy(filename,"outputLEFT.txt");
+  }else{
+    strcpy(filename,"outputRIGHT.txt");
+  }
+  printf("filename: %s", filename);
+  FILE *out = fopen(filename,"w");
+  fprintf(out, "Total requests = %d \n", R_SIZE);
+  fprintf(out, "Initial Head Position: %d \n", header);
+  fprintf(out, "Direction of Head: %s \n", direction);
 
   FIFO_HM = _FIFO();
-  printf("FIFO\n");
+  fprintf(out,"\nFCFS DISK SCHEDULING ALGORITHM:\n\n");
+
   for (i = 0; i < R_SIZE; i++){
-    printf("%d\n", FIFO[i]);
+    fprintf(out,"%d, ", FIFO[i]);
   }
-  printf("head_movements: %d\n", FIFO_HM);
+  fprintf(out,"\n\nFIFO - Total head movements = %d\n\n", FIFO_HM);
 
   _SORT();
-/*
+
   SSTF_HM = _SSTF();
-  printf("SSTF\n");
+  fprintf(out, "SSTF DISK SCHEDULING ALGORITHM\n\n");
+
   for (i = 0; i < R_SIZE; i++){
-    printf("%d\n", SSTF[i]);
+    fprintf(out,"%d, ", SSTF[i]);
   }
-  printf("head_movements: %d\n", SSTF_HM);
-*/
+  fprintf(out,"\n\nSSTF - Total head movements = %d\n\n", SSTF_HM);
+
   SCAN_HM = _SCAN();
-  printf("SCAN\n");
+  fprintf(out, "SCAN DISK SCHEDULING ALGORITHM\n\n");
+
   for (i = 0; i < R_SIZE; i++){
-    printf("%d\n", SCAN[i]);
+    fprintf(out,"%d, ", SCAN[i]);
   }
-  printf("head_movements: %d\n", SCAN_HM);
+  fprintf(out,"\n\nSCAN - Total head movements = %d\n\n", SCAN_HM);
 
 
   CSCAN_HM = _C_SCAN();
-  printf("C SCAN\n");
-  for (i = 0; i < R_SIZE; i++){
-    printf("%d\n", C_SCAN[i]);
-  }
-  printf("head_movements: %d\n", CSCAN_HM);
+  fprintf(out, "C-SCAN DISK SCHEDULING ALGORITHM\n\n");
 
+  for (i = 0; i < R_SIZE; i++){
+    fprintf(out,"%d, ", C_SCAN[i]);
+  }
+  fprintf(out,"\n\nC-SCAN - Total head movements = %d\n\n", CSCAN_HM);
 
   LOOK_HM = _LOOK();
-  printf("LOOK\n");
-  for (i = 0; i < R_SIZE; i++){
-    printf("%d\n", LOOK[i]);
-  }
-  printf("head_movements: %d\n", LOOK_HM);
+  fprintf(out, "LOOK DISK SCHEDULING ALGORITHM\n\n");
 
+  for (i = 0; i < R_SIZE; i++){
+    fprintf(out,"%d, ", LOOK[i]);
+  }
+  fprintf(out,"\n\nLOOK - Total head movements = %d\n\n", LOOK_HM);
 
   CLOOK_HM = _C_LOOK();
-  printf("C LOOK\n");
-  for (i = 0; i < R_SIZE; i++){
-    printf("%d\n", C_LOOK[i]);
-  }
-  printf("head_movements: %d\n", CLOOK_HM);
+  fprintf(out, "C-LOOK DISK SCHEDULING ALGORITHM\n\n");
 
+  for (i = 0; i < R_SIZE; i++){
+    fprintf(out,"%d, ", C_LOOK[i]);
+  }
+  fprintf(out,"\n\nC-LOOK - Total head movements = %d\n", CLOOK_HM);
+  fclose(out);
 
   return 0;
 }
@@ -139,7 +154,7 @@ int _FIFO(){
   }
   return head_movements;
 }
-/*
+
 int _SSTF(){
   int i;
   int start;
@@ -148,6 +163,12 @@ int _SSTF(){
   int h = header;
   int head_movements = 0;
   int count = 0;
+  int left;
+  int right;
+  int l = 0;
+  int r = 0;
+  int flag = 0;
+  int flag2 = 0;
   temp = 0;
   for(i = 0; i<R_SIZE; i++){
     if (header < sortedrequests[i+1]){
@@ -155,25 +176,66 @@ int _SSTF(){
       break;
     }
   }
-  while(count!=19){
-    if (abs(h - sortedrequests[index]) > abs(h-sortedrequests[index+1])){
-      SSTF[count] = sortedrequests[index+1];
-      h = sortedrequests[index+1];
-      index++;
-    }else if (abs(h - sortedrequests[index]) < abs(h-sortedrequests[index+1])){
-      SSTF[count] = sortedrequests[index];
+  left = sortedrequests[index];
+  right = sortedrequests[index+1];
+  while(count<R_SIZE){
+    if (flag == 1){
+      for (i = index+1; i<R_SIZE; i++){
+        SSTF[count] = sortedrequests[i];
+        count++;
+      }
+    }
+    else if (flag2 == 1){
+      for (i = index; i>=0; i--){
+        SSTF[count] = sortedrequests[i];
+        count++;
+      }
+    }
+    else if (left == sortedrequests[0]){
+      SSTF[count] = left;
+      flag = 1;
+    }
+    else if (right == sortedrequests[19]){
+      SSTF[count] = right;
+      flag2 = 1;
+    }
+    else if (abs(h - left) > abs(h-right)){
+      SSTF[count] = right;
+      h = right;
+      l-=2;
+      r++;
+      left = sortedrequests[index+l];
+      right = sortedrequests[index+r];
+    }else if (abs(h - left) < abs(h-right)){
+      SSTF[count] = left;
+      l--;
+      r+=2;
+      left = sortedrequests[index+l];
+      right = sortedrequests[index+r];
     }else{
       if (strcmp(direction,"LEFT") == 0){
-        SSTF[count] = sortedrequests[index];
+        SSTF[count] = left;
+        l--;
+        r+=2;
+        left = sortedrequests[index+l];
+        right = sortedrequests[index+r];
       }else{
-        SSTF[count] = sortedrequests[index+1];
+        SSTF[count] = right;
+        l-=2;
+        r++;
+        left = sortedrequests[index+l];
+        right = sortedrequests[index+r];
       }
     }
     count++;
   }
+  for (i = 0; i <R_SIZE; i++){
+    head_movements += abs(h - SSTF[i]);
+    h = SSTF[i];
+  }
   return head_movements;
 }
-*/
+
 int _SCAN(){
   int i;
   int start;
@@ -183,13 +245,13 @@ int _SCAN(){
   int head_movements = 0;
 
   temp = 0;
-  if (strcmp(direction,"LEFT") == 0){
-    for(i = 0; i<R_SIZE; i++){
-      if (header < sortedrequests[i+1]){
-        index = i;
-        break;
-      }
+  for(i = 0; i<R_SIZE; i++){
+    if (header < sortedrequests[i+1]){
+      index = i;
+      break;
     }
+  }
+  if (strcmp(direction,"LEFT") == 0){
     for (i = index; i>=0; i--){
       SCAN[temp] = sortedrequests[i];
       temp++;
@@ -200,21 +262,15 @@ int _SCAN(){
     }
     head_movements = abs(header-0) + abs(0-sortedrequests[19]);
   }else{
-    for(i = 0; i<R_SIZE; i++){
-      if (header < sortedrequests[i+1]){
-        index = i;
-        break;
-      }
-    }
-    for (i = index+1; i<R_SIZE; i++){
+    for (i = index; i<R_SIZE; i++){
       SCAN[temp] = sortedrequests[i];
       temp++;
     }
-    for (i = index; i>=0; i--){
+    for (i = index-1; i>=0; i--){
       SCAN[temp] = sortedrequests[i];
       temp++;
     }
-    head_movements = abs(header-299) + abs(sortedrequests[19]-sortedrequests[0]);
+    head_movements = abs(header-299) + abs(299-sortedrequests[0]);
   }
   return head_movements;
 }
@@ -244,15 +300,15 @@ int _C_SCAN(){
     }
     head_movements = abs(header-0) + abs(0-299) + abs(299-sortedrequests[index+1]);
   }else{
-    for (i = index+1; i<R_SIZE; i++){
+    for (i = index; i<R_SIZE; i++){
       C_SCAN[temp] = sortedrequests[i];
       temp++;
     }
-    for (i = 0; i<=index; i++){
+    for (i = 0; i<=index-1; i++){
       C_SCAN[temp] = sortedrequests[i];
       temp++;
     }
-    head_movements = abs(header-299) + abs(299-0) + abs(0-sortedrequests[index]);
+    head_movements = abs(header-299) + abs(299-0) + abs(0-sortedrequests[index-1]);
   }
   return head_movements;
 }
@@ -265,13 +321,13 @@ int _LOOK(){
   int h = header;
   int head_movements = 0;
   temp = 0;
-  if (strcmp(direction,"LEFT") == 0){
-    for(i = 0; i<R_SIZE; i++){
-      if (header < sortedrequests[i+1]){
-        index = i;
-        break;
-      }
+  for(i = 0; i<R_SIZE; i++){
+    if (header < sortedrequests[i+1]){
+      index = i;
+      break;
     }
+  }
+  if (strcmp(direction,"LEFT") == 0){
     for (i = index; i>=0; i--){
       LOOK[temp] = sortedrequests[i];
       temp++;
@@ -282,17 +338,11 @@ int _LOOK(){
     }
     head_movements = abs(header - sortedrequests[0]) +  abs(sortedrequests[0]-sortedrequests[19]);
   }else{
-    for(i = 0; i<R_SIZE; i++){
-      if (header < sortedrequests[i+1]){
-        index = i;
-        break;
-      }
-    }
-    for (i = index+1; i<R_SIZE; i++){
+    for (i = index; i<R_SIZE; i++){
       LOOK[temp] = sortedrequests[i];
       temp++;
     }
-    for (i = index; i>=0; i--){
+    for (i = index-1; i>=0; i--){
       LOOK[temp] = sortedrequests[i];
       temp++;
     }
@@ -326,7 +376,7 @@ int _C_LOOK(){
     }
     head_movements = abs(header - sortedrequests[0]) +  abs(sortedrequests[0]-sortedrequests[19]) + abs(sortedrequests[19]-sortedrequests[index+1]);
   }else{
-    for (i = index+1; i<R_SIZE; i++){
+    for (i = index; i<R_SIZE; i++){
       C_LOOK[temp] = sortedrequests[i];
       temp++;
     }
@@ -334,7 +384,7 @@ int _C_LOOK(){
       C_LOOK[temp] = sortedrequests[i];
       temp++;
     }
-    head_movements = abs(header - sortedrequests[19]) +  abs(sortedrequests[19]-sortedrequests[0]) + abs(sortedrequests[0]-sortedrequests[index]);
+    head_movements = abs(header - sortedrequests[19]) +  abs(sortedrequests[19]-sortedrequests[0]) + abs(sortedrequests[0]-sortedrequests[index-1]);
   }
   return head_movements;
 }
