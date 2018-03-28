@@ -14,7 +14,7 @@ signed char *mmapfptr;
 int header;
 char direction[12];
 
-int FIFO[R_SIZE];
+int FCFS[R_SIZE];
 int SSTF[R_SIZE];
 int SCAN[R_SIZE];
 int C_SCAN[R_SIZE];
@@ -22,7 +22,7 @@ int LOOK[R_SIZE];
 int C_LOOK[R_SIZE];
 
 void _SORT(void);
-int _FIFO(void);
+int _FCFS(void);
 int _SSTF(void);
 int _SCAN(void);
 int _C_SCAN(void);
@@ -31,7 +31,7 @@ int _C_LOOK(void);
 
 int main(int argc, char *argv[]){
   int i;
-  int FIFO_HM = 0;
+  int FCFS_HM = 0;
   int SSTF_HM = 0;
   int SCAN_HM = 0;
   int CSCAN_HM = 0;
@@ -65,13 +65,13 @@ int main(int argc, char *argv[]){
   fprintf(out, "Initial Head Position: %d \n", header);
   fprintf(out, "Direction of Head: %s \n", direction);
 
-  FIFO_HM = _FIFO();
+  FCFS_HM = _FCFS();
   fprintf(out,"\nFCFS DISK SCHEDULING ALGORITHM:\n\n");
 
   for (i = 0; i < R_SIZE; i++){
-    fprintf(out,"%d, ", FIFO[i]);
+    fprintf(out,"%d, ", FCFS[i]);
   }
-  fprintf(out,"\n\nFIFO - Total head movements = %d\n\n", FIFO_HM);
+  fprintf(out,"\n\nFCFS - Total head movements = %d\n\n", FCFS_HM);
 
   _SORT();
 
@@ -142,15 +142,15 @@ void _SORT(){
   }
 }
 
-int _FIFO(){
+int _FCFS(){
   int h = header;
   int head_movements = 0;
   int i;
 
   for (i = 0; i < R_SIZE; i++){
-    FIFO[i] = requests[i];
-    head_movements += abs(h - FIFO[i]);
-    h = FIFO[i];
+    FCFS[i] = requests[i];
+    head_movements += abs(h - FCFS[i]);
+    h = FCFS[i];
   }
   return head_movements;
 }
