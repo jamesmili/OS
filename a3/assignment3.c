@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
 
   int mmapfile_fd = open("request.bin", O_RDONLY);
   mmapfptr = mmap(0, B_SIZE, PROT_READ, MAP_PRIVATE, mmapfile_fd, 0);
-  for (i = 0; i < B_SIZE; i++){
+  for (i = 0; i < R_SIZE; i++){
     memcpy(requests+i, mmapfptr+i*BYTES, BYTES);
   }
   close (mmapfile_fd);
